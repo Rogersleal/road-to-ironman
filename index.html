@@ -94,30 +94,6 @@ try{localStorage.setItem(STORE,JSON.stringify(workouts))}catch(e){}
 function persist(){try{localStorage.setItem(STORE,JSON.stringify(workouts))}catch(e){alert('Não foi possível guardar automaticamente. Exporta uma cópia JSON.')}}
 function refreshCounts(){ $('total').textContent=workouts.length;$('planned').textContent=workouts.filter(w=>(w.WorkoutDescription||'').trim()).length;$('categories').textContent=new Set(workouts.map(w=>w.WorkoutType)).size;}
 
-// Navegação universal: guarda a origem ao abrir uma vista, treino ou editor.
-const navigationStack=[];
-let navigationRestoring=false;
-function navigationState(){return {calendar:document.body.classList.contains('calendar-mode'),sport:$('sport').value,selected,detail:!!(selected&&$('detail').querySelector('.detail-heading-row')),calDetail:!!$('calDetail').querySelector('.detail-heading-row'),editor:$('editor').open,scroll:window.scrollY};}
-function updateGlobalBack(){const b=$('globalBack');b.classList.toggle('visible',navigationStack.length>0||$('editor').open);}
-function navigationPush(){if(navigationRestoring)return;navigationStack.push(navigationState());if(navigationStack.length>30)navigationStack.shift();updateGlobalBack();}
-function navigationBack(){
- if($('editor').open){$('editor').close();updateGlobalBack();return}
- if(!navigationStack.length){updateGlobalBack();return}
- const state=navigationStack.pop();navigationRestoring=true;
- if(state.calendar){openCalendar();if(!state.calDetail)$('calDetail').innerHTML='';}
- else{document.body.classList.remove('calendar-mode');$('sport').value=state.sport;syncTabs();selected=null;$('detail').innerHTML='<div class="empty">Seleciona um treino para consultar o planeamento.</div>';render();if(state.detail&&state.selected)show(state.selected);else if(!state.detail)selected=null;}
- navigationRestoring=false;updateGlobalBack();
- window.scrollTo({top:state.scroll||0,behavior:'smooth'});
-}
-$('globalBack').onclick=navigationBack;
-document.addEventListener('click',e=>{
- if(navigationRestoring)return;
- const target=e.target.closest('button');if(!target)return;
- if(target.id==='globalBack'||target.id==='backToWorkouts')return;
- if(target.matches('.bottom-tabs button, #addWorkout, .item, .cal-session, #editWorkout, #editWorkoutTop, #calEdit'))navigationPush();
-},true);
-$('editor').addEventListener('close',updateGlobalBack);
-
 function openEditor(id){const w=id==null?{id:Math.max(0,...workouts.map(x=>x.id))+1,Title:'',WorkoutType:'Run',WorkoutDay:new Date().toISOString().slice(0,10),PlannedDuration:'',PlannedDistanceInMeters:'',WorkoutDescription:'',CoachComments:''}:workouts.find(x=>x.id===id);if(!w)return;
 $('editTitle').textContent=id==null?'Novo treino':'Editar treino';$('editId').value=id==null?'':String(id);
 for(const k of ['Title','WorkoutType','WorkoutDay','PlannedDuration','PlannedDistanceInMeters','WorkoutDescription','CoachComments'])$('e_'+k).value=w[k]||'';
@@ -190,6 +166,31 @@ $('addWorkout').onclick=()=>openEditor(null);$('exportWorkouts').onclick=exportD
 $('editForm').onsubmit=e=>{e.preventDefault();const old=$('editId').value;const w={id:old?Number(old):Math.max(0,...workouts.map(x=>x.id))+1};for(const k of ['Title','WorkoutType','WorkoutDay','PlannedDuration','PlannedDistanceInMeters','WorkoutDescription','CoachComments'])w[k]=$('e_'+k).value;if(old){const i=workouts.findIndex(x=>x.id===Number(old));if(i>=0)workouts[i]=w}else workouts.push(w);persist();refreshCounts();$('editor').close();selected=null;render();show(w.id);if(document.body.classList.contains('calendar-mode'))calendarRender()};
 $('importFile').onchange=async e=>{try{const data=JSON.parse(await e.target.files[0].text());if(!Array.isArray(data)||!data.every(x=>x&&typeof x.Title==='string'&&['Run','Bike','Swim'].includes(x.WorkoutType)))throw Error('Formato inválido');if(confirm('Substituir a biblioteca atual pelo ficheiro importado?')){workouts=data;persist();refreshCounts();selected=null;$('detail').innerHTML='<div class=empty>Seleciona um treino.</div>';render()}}catch(err){alert('Não foi possível importar: '+err.message)}e.target.value=''};
 function syncTabs(){document.querySelectorAll('.bottom-tabs button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.sport===$('sport').value)))}document.querySelectorAll('.bottom-tabs button').forEach(b=>b.addEventListener('click',()=>{$('sport').value=b.dataset.sport;selected=null;$('detail').innerHTML='<div class="empty">Seleciona um treino para consultar o planeamento.</div>';syncTabs();render();window.scrollTo({top:0,behavior:'smooth'})}));['search','sport','month','order'].forEach(id=>$(id).addEventListener(id==='search'?'input':'change',()=>{syncTabs();render()}));$('sport').value='Swim';syncTabs();render();
+// Navegação universal: guarda a origem ao abrir uma vista, treino ou editor.
+const navigationStack=[];
+let navigationRestoring=false;
+function navigationState(){return {calendar:document.body.classList.contains('calendar-mode'),sport:$('sport').value,selected,detail:!!(selected&&$('detail').querySelector('.detail-heading-row')),calDetail:!!$('calDetail').querySelector('.detail-heading-row'),editor:$('editor').open,scroll:window.scrollY};}
+function updateGlobalBack(){const b=$('globalBack');b.classList.toggle('visible',navigationStack.length>0||$('editor').open);}
+function navigationPush(){if(navigationRestoring)return;navigationStack.push(navigationState());if(navigationStack.length>30)navigationStack.shift();updateGlobalBack();}
+function navigationBack(){
+ if($('editor').open){$('editor').close();updateGlobalBack();return}
+ if(!navigationStack.length){updateGlobalBack();return}
+ const state=navigationStack.pop();navigationRestoring=true;
+ if(state.calendar){openCalendar();if(!state.calDetail)$('calDetail').innerHTML='';}
+ else{document.body.classList.remove('calendar-mode');$('sport').value=state.sport;syncTabs();selected=null;$('detail').innerHTML='<div class="empty">Seleciona um treino para consultar o planeamento.</div>';render();if(state.detail&&state.selected)show(state.selected);else if(!state.detail)selected=null;}
+ navigationRestoring=false;updateGlobalBack();
+ window.scrollTo({top:state.scroll||0,behavior:'smooth'});
+}
+$('globalBack').onclick=navigationBack;
+document.addEventListener('click',e=>{
+ if(navigationRestoring)return;
+ const target=e.target.closest('button');if(!target)return;
+ if(target.id==='globalBack'||target.id==='backToWorkouts')return;
+ if(target.matches('.bottom-tabs button, #addWorkout, .item, .cal-session, #editWorkout, #editWorkoutTop, #calEdit'))navigationPush();
+},true);
+$('editor').addEventListener('close',updateGlobalBack);
+
+
 // Calendário: mantém o dia da semana original, deslocando a sequência por semanas inteiras.
 const CAL_KEY='ironmantrainingsystem_calendar_overrides_v1';
 let calOverrides={};try{calOverrides=JSON.parse(localStorage.getItem(CAL_KEY))||{}}catch(e){}
