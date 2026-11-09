@@ -64,7 +64,7 @@ const SWIM_BLOCK_LABELS=['Warm-up/Technique','Warm-up','Race Warm-up','Feel for 
 function layoutSwimDescription(input){
  let text=String(input||'').replace(/\r\n?/g,'\n').replace(/\u00a0/g,' ').trim();
  if(!text)return text;
- const escaped=SWIM_BLOCK_LABELS.map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\const STORE='ironmantrainingsystem_edits_v1';')).sort((a,b)=>b.length-a.length);
+ const escaped=SWIM_BLOCK_LABELS.map(x=>x.replace(/[.*+?^${}()|[\]\\]/g, m=>'\\'+m)).sort((a,b)=>b.length-a.length);
  const heading=new RegExp('(?:^|\\s+|--\\s*)(?=('+escaped.join('|')+')\\s*:)','gi');
  text=text.replace(heading,'\n\n');
  // Separa exercícios numerados, mantendo os identificadores e o texto original.
